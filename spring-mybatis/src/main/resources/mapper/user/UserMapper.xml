@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--定义映射文件-->
+
+<mapper namespace="com.xlh.mybatis.mapper.UserMapper">
+    <!--把sql语句中的字段提取出来 使用的时侯可以调用id的名字 <include refid="写id名称"><include/>  -->
+    <sql id="SQL_columns_user">
+        id, user_name, `password`, phone, email, create_time, update_time
+    </sql>
+    <!--根据id 查询用户  id对应的是接口里的方法名 resultType 是返回类型-->
+    <!--sql语句 字段对应表的字段  条件对应的entity类的属性-->
+    <select id="selectById" resultType="User">
+        SELECT id, user_name, `password`, phone, email, create_time, update_time
+        FROM tb_user
+        WHERE id = #{userId}
+    </select>
+    <!--新增数据-->
+    <!-- <insert id="insert" useGeneratedKeys="true" keyProperty="id"> 可以在插入数据的同时返回id的信息这条数据，-->
+    <!--这样可以用户注册后直接拿到id，得到session然后存放好 可以进行免登录了-->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `mybatis01`.`tb_user` (
+        `user_name`,`password`,`phone`,`email`)
+        VALUES(#{userName},#{password},#{phone},#{email}) ;
+    </insert>
+    <!--根据id删除数据-->
+    <delete id="deleteById">
+        DELETE FROM tb_user WHERE id=#{id}
+    </delete>
+
+    <!--根据id来修改数据-->
+    <!--sql语句  UPDATE `tb_user` SET `user_name` = ?, `email` = ? WHERE `id` = ?;-->
+    <!--1.第一种 每一个字段都需更改，不更改的话它会填充null-->
+    <!--2.第二种 可以选择性的更改，更加灵活 -->
+    <!--3.第三种 也很灵活 而且把最后一个字段的“,” 精准的格式了   <trim prefix="set" suffixOverrides=",">-->
+    <update id="updateById">
+
+        <!--UPDATE `tb_user`
+            SET `user_name` = #{userName},
+             `password`  = #{password},
+             `phone`     = #{phone},
+             `email`     = #{email}
+         WHERE `id` = #{id};
+         -->
+
+    <!-- UPDATE `tb_user`
+    <set>
+        <if test="userName != null">
+            `user_name` = #{userName},
+        </if>
+         <if test="password != null">
+             `password` = #{password},
+        </if> <if test="phone != null">
+             `phone` = #{phone},
+        </if>
+         <if test="email != null">
+             `email`  = #{email}
+        </if>
+    </set>
+    WHERE `id` = #{id};
+    -->
+        UPDATE `tb_user`
+        <trim prefix="set" suffixOverrides=",">
+            <if test="userName != null">
+                `user_name` = #{userName},
+            </if>
+            <if test="password != null">
+                `password` = #{password},
+            </if> <if test="phone != null">
+            `phone` = #{phone},
+            </if>
+            <if test="email != null">
+                `email`  = #{email}
+            </if>
+        </trim>
+        WHERE `id` = #{id};
+</update>
+        <!--#[对这个里的名字] @Param(这个里起名字)这个名字在-->
+    <update id="updateUserNameById">
+        UPDATE tb_user
+        SET user_name= #{userName}
+        WHERE id = #{userId}
+    </update>
+    <!--通过Map集合传参数 #{userId}、#[userName] 对应的是测试里的map的Key  大小写要对应起来  -->
+    <update id="updateUserNameByIdWithMap">
+         UPDATE tb_user
+        SET user_name= #{userName}
+        WHERE id = #{userId}
+    </update>
+
+
+
+<select id="selectListByUserName" resultType="User">
+    <bind name="likeUserName" value="'%'+userName+'%'"/>
+    SELECT id, user_name, `password`, phone, email, create_time, update_time
+    FROM tb_user
+    WHERE user_name LIKE #{likeUserName}
+</select>
+
+
+<!--动态查询if 可根据业务需求进行 设置参数  “WHERE AND”关键字多余的错误 SQL。 -->
+   <select id="selectListByUser" resultType="User">
+    select
+    <include refid="SQL_columns_user"></include>
+    from tb_user
+    <where>
+        <!--根据用户名查询 -->
+        <if test="userName != null">
+            and user_name=#{userName}
+        </if>
+        <!--根据手机号码查询 -->
+        <if test="phone != null">
+            and phone=#{phone}
+        </if>
+        <if test="createTime != null and updateTime != null">
+         and
+         (createTime begin #[createTime] and #[updatTime])
+        </if>
+    </where>
+   </select>
+
+</mapper>
